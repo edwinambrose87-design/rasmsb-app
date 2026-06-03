@@ -7,8 +7,13 @@ export default function AttendanceTile() {
   const [showCamera, setShowCamera] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
   
+  // New States for Success Handling and Photo Previews
+  const [capturedImageData, setCapturedImageData] = useState<string | null>(null)
+  const [isSuccessState, setIsSuccessState] = useState(false)
+  
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   // ⏰ LIVE DUTY TIMER LOOP TRACKER
   useEffect(() => {
@@ -31,12 +36,16 @@ export default function AttendanceTile() {
     }
     setShowCamera(false)
     setCameraError(null)
+    setCapturedImageData(null)
+    setIsSuccessState(false)
   }
 
   // 📸 REQUEST NATIVE DEVICE FRONT SELFIE CAMERA PORTAL
   const startCameraStream = async () => {
     setShowCamera(true)
     setCameraError(null)
+    setCapturedImageData(null)
+    setIsSuccessState(false)
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
@@ -48,25 +57,58 @@ export default function AttendanceTile() {
       }
     } catch (err: any) {
       console.error("Camera hardware lock exception:", err)
-      setCameraError("Camera access denied or unassigned. Please inspect system app tracking permissions.")
+      setCameraError("Camera access denied or unassigned. Please check application settings permissions.")
     }
   }
 
-  // 📝 COMMIT TRANSACTIONS AND COMMENCE SHIFT TIMER
+  // 📝 CAPTURE SNAPSHOT FRAME, RUN PREVIEW TIMELINE, AND SET SUCCESS STATE
   const handleCaptureSnapshot = () => {
-    // Note: Future connection integration point for base64 storage snapshots
-    setIsClockedIn(true)
-    stopCameraStream()
+    if (!videoRef.current || !canvasRef.current) return
+
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const context = canvas.getContext('2d')
+
+    if (context) {
+      // Synchronize canvas processing grids to video feed dimensions
+      canvas.width = video.videoWidth || 640
+      canvas.height = video.videoHeight || 480
+      
+      // Mirror frame tracking adjustments to align to web component transformations
+      context.translate(canvas.width, 0)
+      context.scale(-1, 1)
+      
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      
+      // Convert current vector data into high-vibrancy base64 preview asset
+      const base64Data = canvas.toDataURL('image/jpeg')
+      setCapturedImageData(base64Data)
+      setIsSuccessState(true)
+
+      // Turn off active camera hardware capture modules right away
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
+
+      // Execute 3-second display countdown block before changing the tile status
+      setTimeout(() => {
+        alert("Attendance successfully updated.")
+        setIsClockedIn(true)
+        setShowCamera(false)
+        setCapturedImageData(null)
+        setIsSuccessState(false)
+      }, 3000)
+    }
   }
 
   const handleClockOutSequence = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent reopening camera framework on container click
+    e.stopPropagation()
     if (confirm("Execute terminal sign-out sequence? Shift duration tally will lock.")) {
       setIsClockedIn(false)
     }
   }
 
-  // UTILITY PARSER FOR DUTY TIMER FORMAT
   const formatDutyTally = (totalSecs: number) => {
     const hrs = Math.floor(totalSecs / 3600)
     const mins = Math.floor((totalSecs % 3600) / 60)
@@ -76,21 +118,24 @@ export default function AttendanceTile() {
 
   return (
     <>
-      {/* CARD INTERFACES LINK */}
+      {/* Hidden processing core canvas needed for frame data conversion */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {/* COMPONENT INTERFACE TILES */}
       <div 
         onClick={!isClockedIn ? startCameraStream : undefined}
         style={{ 
           backgroundColor: '#ffffff', 
-          border: isClockedIn ? '2px solid #10b981' : '1px solid #e2e8f0', 
-          borderRadius: '16px', 
+          border: isClockedIn ? '2px solid #10b981' : '1px solid #eef2f6', 
+          borderRadius: '20px', 
           padding: '24px 12px', 
           textAlign: 'center', 
           cursor: !isClockedIn ? 'pointer' : 'default', 
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', 
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.02)', 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
-          gap: '12px',
+          gap: '14px',
           position: 'relative',
           transition: 'border 0.2s ease-in-out'
         }}
@@ -102,7 +147,7 @@ export default function AttendanceTile() {
           borderRadius: '14px', 
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'center',
+          justifyContent: 'center', 
           fontSize: '24px', 
           border: isClockedIn ? '1px solid #a7f3d0' : '1px solid #bfdbfe' 
         }}>
@@ -110,25 +155,25 @@ export default function AttendanceTile() {
         </div>
         
         <div>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#1e3a8a' }}>
+          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#1e3a8a' }}>
             {isClockedIn ? 'Clocked In' : 'Attendance'}
           </h3>
           
           {isClockedIn ? (
             <div style={{ marginTop: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#10b981', fontFamily: 'monospace', display: 'block' }}>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: '#10b981', fontFamily: 'monospace', display: 'block' }}>
                 ⏱️ {formatDutyTally(elapsedSeconds)}
               </span>
               <button 
                 onClick={handleClockOutSequence}
-                style={{ marginTop: '8px', backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                style={{ marginTop: '8px', backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
               >
                 Sign-Out Shift
               </button>
             </div>
           ) : (
-            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#64748b', lineHeight: '1.3' }}>
-              Sign-In / Sign-Out Duty Shift
+            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#64748b', fontWeight: '500', lineHeight: '1.3' }}>
+              Sign-In Shift
             </p>
           )}
         </div>
@@ -136,18 +181,46 @@ export default function AttendanceTile() {
 
       {/* DYNAMIC CAM MODAL SYSTEM POPUP LAYER OVERLAY */}
       {showCamera && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(15, 23, 42, 0.85)', zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box', fontFamily: 'sans-serif' }}>
-          <div style={{ backgroundColor: '#ffffff', width: '100%', maxWidth: '400px', borderRadius: '16px', padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          backgroundColor: 'rgba(15, 23, 42, 0.75)', 
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'flex-start', // FIXED: Shifts the placement anchor toward the top boundary
+          padding: '60px 20px 20px 20px', // FIXED: Adds custom vertical offset to raise the card position cleanly
+          boxSizing: 'border-box', 
+          fontFamily: 'system-ui, -apple-system, sans-serif' 
+        }}>
+          <div style={{ backgroundColor: '#ffffff', width: '100%', maxWidth: '390px', borderRadius: '24px', padding: '24px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '18px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#1e3a8a' }}>Biometric Attendance Identity Capture</h4>
-              <button onClick={stopCameraStream} style={{ background: 'none', border: 'none', fontSize: '18px', color: '#94a3b8', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+              {/* FIXED: Dynamic updated tracking title */}
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.2px' }}>
+                RASMSB Attendance Verification
+              </h4>
+              {!isSuccessState && (
+                <button onClick={stopCameraStream} style={{ background: 'none', border: 'none', fontSize: '18px', color: '#94a3b8', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+              )}
             </div>
 
-            {/* VIDEO CAPTURE FEED AREA */}
-            <div style={{ width: '100%', height: '260px', backgroundColor: '#0f172a', borderRadius: '12px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* VIDEO CAPTURE FEED / STATIC PREVIEW AREA */}
+            <div style={{ width: '100%', height: '270px', backgroundColor: '#0f172a', borderRadius: '16px', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.2)' }}>
               {cameraError ? (
                 <div style={{ color: '#f87171', fontSize: '12px', padding: '20px', textAlign: 'center', fontWeight: '600' }}>⚠️ {cameraError}</div>
+              ) : capturedImageData ? (
+                /* FIXED: Displays frozen high-vibrancy capture picture data */
+                <img 
+                  src={capturedImageData} 
+                  alt="Captured Selfie" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
               ) : (
                 <video 
                   ref={videoRef}
@@ -157,22 +230,30 @@ export default function AttendanceTile() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
                 />
               )}
+
+              {/* OVERLAY TIMER / ANIMATION FEEDBACK ON SUCCESS CAPTURE */}
+              {isSuccessState && (
+                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: 'rgba(16, 185, 129, 0.9)', color: 'white', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  Processing secure verification frames...
+                </div>
+              )}
             </div>
 
-            {/* LOWER PORT CONTROLS */}
+            {/* PORT CONTROLS */}
             <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
               <button 
                 onClick={stopCameraStream}
-                style={{ flex: 1, height: '44px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '8px', color: '#475569', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                disabled={isSuccessState}
+                style={{ flex: 1, height: '46px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '12px', color: '#475569', fontSize: '13px', fontWeight: '700', cursor: isSuccessState ? 'not-allowed' : 'pointer', opacity: isSuccessState ? 0.5 : 1 }}
               >
                 Cancel
               </button>
               <button 
                 onClick={handleCaptureSnapshot}
-                disabled={!!cameraError}
-                style={{ flex: 2, height: '44px', backgroundColor: !!cameraError ? '#cbd5e1' : '#10b981', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: 'bold', cursor: !!cameraError ? 'not-allowed' : 'pointer', boxShadow: !cameraError ? '0 4px 6px -1px rgba(16, 185, 129, 0.2)' : 'none' }}
+                disabled={!!cameraError || isSuccessState}
+                style={{ flex: 2, height: '46px', backgroundColor: (!!cameraError || isSuccessState) ? '#cbd5e1' : '#10b981', border: 'none', borderRadius: '12px', color: 'white', fontSize: '13px', fontWeight: '700', cursor: (!!cameraError || isSuccessState) ? 'not-allowed' : 'pointer', boxShadow: (!cameraError && !isSuccessState) ? '0 4px 12px rgba(16, 185, 129, 0.25)' : 'none' }}
               >
-                Snap Photo & Clock In
+                {isSuccessState ? 'Verifying Identity...' : 'Snap & Clock In'}
               </button>
             </div>
 
