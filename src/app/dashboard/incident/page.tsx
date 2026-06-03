@@ -93,12 +93,6 @@ export default function IncidentReportPage() {
     }
   }
 
-  const formatDisplayDate = (dateStr: string) => {
-    if (!dateStr) return ''
-    const [year, month, day] = dateStr.split('-')
-    return `${day}/${month}/${year}`
-  }
-
   // Filter and Sort Incidents based on Main and Sub-Tabs chosen
   const getFilteredIncidents = () => {
     const dateBounded = incidents.filter(item => item.pureDate >= startDate && item.pureDate <= endDate)
@@ -192,17 +186,25 @@ export default function IncidentReportPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ backgroundColor: 'white', padding: '8px 16px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '15px', height: '46px', boxSizing: 'border-box' }}>
-              <div onClick={() => (document.getElementById('inc-start-picker') as HTMLInputElement)?.showPicker()} style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ backgroundColor: 'white', padding: '6px 14px', borderRadius: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', height: '46px', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <label style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', letterSpacing: '0.5px' }}>START DATE</label>
-                <span style={{ color: '#1e3a8a', fontWeight: '600', fontSize: '12px' }}>{formatDisplayDate(startDate)}</span>
-                <input id="inc-start-picker" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => setStartDate(e.target.value)} 
+                  style={{ color: '#1e3a8a', fontWeight: '600', fontSize: '13px', border: 'none', outline: 'none', backgroundColor: 'transparent', cursor: 'pointer', padding: 0, margin: 0 }} 
+                />
               </div>
               <div style={{ color: '#cbd5e1', fontWeight: 'bold', fontSize: '11px' }}>➔</div>
-              <div onClick={() => (document.getElementById('inc-end-picker') as HTMLInputElement)?.showPicker()} style={{ display: 'flex', flexDirection: 'column', gap: '2px', position: 'relative', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <label style={{ fontSize: '8px', fontWeight: 'bold', color: '#64748b', letterSpacing: '0.5px' }}>END DATE</label>
-                <span style={{ color: '#1e3a8a', fontWeight: '600', fontSize: '12px' }}>{formatDisplayDate(endDate)}</span>
-                <input id="inc-end-picker" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => setEndDate(e.target.value)} 
+                  style={{ color: '#1e3a8a', fontWeight: '600', fontSize: '13px', border: 'none', outline: 'none', backgroundColor: 'transparent', cursor: 'pointer', padding: 0, margin: 0 }} 
+                />
               </div>
             </div>
             <button onClick={() => alert('Exporting active logs...')} style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '0 20px', borderRadius: '10px', fontSize: '13.5px', fontWeight: 'bold', cursor: 'pointer', height: '46px', boxShadow: '0 4px 6px -1px rgba(16, 185, 129, 0.2)' }}>Export Logs</button>
@@ -280,7 +282,7 @@ export default function IncidentReportPage() {
                           {incident.status === 'PENDING ACTION' && (
                             <button
                               onClick={(e) => { e.stopPropagation(); advanceTicketWorkflow(incident.id, incident.status); }}
-                              style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                              style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
                             >
                               Resolve
                             </button>
