@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { BrandProvider, useBrand } from '@/context/BrandContext'
+import { ProjectProvider, useProject } from '@/context/ProjectContext'
 
 interface ProjectRow {
   id: string
@@ -16,6 +17,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   
   const { brandName, themeColor, logoUrl, setBrandName, setThemeColor, setLogoUrl } = useBrand()
+  const { setProjectId } = useProject() // Added context hook
   
   const [selectedProject, setSelectedProject] = useState('')
   const [projectsList, setProjectsList] = useState<ProjectRow[]>([])
@@ -102,9 +104,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
             
             if (currentUrlSlug) {
               setSelectedProject(currentUrlSlug)
+              setProjectId(currentUrlSlug) // Sync on load
             } else {
               const defaultSlug = projData[0].slug
               setSelectedProject(defaultSlug)
+              setProjectId(defaultSlug) // Sync on load
               if (window.location.pathname.startsWith('/dashboard')) {
                 router.push(`${window.location.pathname}?project=${defaultSlug}`)
               }
@@ -131,10 +135,11 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     return () => {
       supabase.removeChannel(realTimeChannel)
     }
-  }, [supabase, router])
+  }, [supabase, router, setProjectId])
 
   const handleProjectDropdownChange = (newSlug: string) => {
     setSelectedProject(newSlug)
+    setProjectId(newSlug) // Sync on change
     if (pathname.startsWith('/dashboard')) {
       router.push(`${pathname}?project=${newSlug}`)
     }
@@ -234,7 +239,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         overflow: 'hidden',
         borderRight: '1px solid rgba(0,0,0,0.05)'
       }}>
-       
+        
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '35px 24px 25px 24px', display: 'flex', alignItems: 'center', gap: '14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ width: '38px', height: '38px', backgroundColor: 'white', borderRadius: '8px', color: themeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', overflow: 'hidden', flexShrink: 0 }}>
@@ -343,7 +348,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         
-        {/* Native React dynamic key implementation targets clean route refreshes instantly */}
         <div key={selectedProject} style={{ flex: 1, overflowY: 'auto' }}>
           {children}
         </div>
@@ -355,8 +359,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <BrandProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </BrandProvider>
+    <ProjectProvider>
+      <BrandProvider>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </BrandProvider>
+    </ProjectProvider>
   )
 }
